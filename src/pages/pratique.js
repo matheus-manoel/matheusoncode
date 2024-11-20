@@ -1,12 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { CheckCircle2, Circle, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronDown, ChevronUp, Code, Video } from 'lucide-react';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-python';
+import 'prismjs/themes/prism-tomorrow.css';
 
 const PracticeDashboard = () => {
+  const [showCode, setShowCode] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
+  const [selectedCode, setSelectedCode] = useState('');
+  const [selectedVideo, setSelectedVideo] = useState('');
+  const [completedProblems, setCompletedProblems] = useState(new Set());
+  const [expandedSections, setExpandedSections] = useState(new Set());
+
   const categories = {
     'Array': [
-      { id: 1, name: 'Two Sum', difficulty: 'Easy', time: '15 mins', link: 'https://leetcode.com/problems/two-sum/' },
-      { id: 2, name: 'Best Time to Buy and Sell Stock', difficulty: 'Easy', time: '20 mins', link: 'https://leetcode.com/problems/best-time-to-buy-and-sell-stock/' },
+      {
+        id: 1, name: 'Two Sum', difficulty: 'Easy', time: '15 mins', link: 'https://leetcode.com/problems/two-sum/',
+        video: 'aKUOdKffnVE',
+        solution: `class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        seen = {}
+        for i, value in enumerate(nums):
+            remaining = target - value
+            if remaining in seen:
+                return [seen[remaining], i]
+            seen[value] = i`
+      },
+      {
+        id: 2, name: 'Best Time to Buy and Sell Stock', difficulty: 'Easy', time: '20 mins', link: 'https://leetcode.com/problems/best-time-to-buy-and-sell-stock/'
+      },
       { id: 3, name: 'Insert Interval', difficulty: 'Medium', time: '25 mins', link: 'https://leetcode.com/problems/insert-interval/' },
       { id: 4, name: '3Sum', difficulty: 'Medium', time: '30 mins', link: 'https://leetcode.com/problems/3sum/' },
       { id: 5, name: 'Product of Array Except Self', difficulty: 'Medium', time: '30 mins', link: 'https://leetcode.com/problems/product-of-array-except-self/' },
@@ -107,46 +130,38 @@ const PracticeDashboard = () => {
       { id: 74, name: 'Unique Paths', difficulty: 'Medium', time: '20 mins', link: 'https://leetcode.com/problems/unique-paths/' }
     ],
     'Binary': [
-      { id: 75, name: 'Add Binary', difficulty: 'Easy', time: '15 mins', link: 'https://leetcode.com/problems/add-binary/'}
-    ]  
+      { id: 75, name: 'Add Binary', difficulty: 'Easy', time: '15 mins', link: 'https://leetcode.com/problems/add-binary/' }
+    ]
   }
 
-    // Initialize with empty sets
-  const [completedProblems, setCompletedProblems] = useState(new Set());
-  const [expandedSections, setExpandedSections] = useState(new Set());
-  
-  // Load data from localStorage only after component mounts
   useEffect(() => {
     try {
       const savedProblems = localStorage.getItem('completedProblems');
       if (savedProblems) {
         setCompletedProblems(new Set(JSON.parse(savedProblems)));
       }
-
       const savedSections = localStorage.getItem('expandedSections');
       if (savedSections) {
         setExpandedSections(new Set(JSON.parse(savedSections)));
       }
     } catch (error) {
-      console.error('Error loading data from localStorage:', error);
+      console.error('Error loading data:', error);
     }
   }, []);
 
-  // Save to localStorage whenever completedProblems changes
   useEffect(() => {
     try {
       localStorage.setItem('completedProblems', JSON.stringify([...completedProblems]));
     } catch (error) {
-      console.error('Error saving completed problems to localStorage:', error);
+      console.error('Error saving completed problems:', error);
     }
   }, [completedProblems]);
 
-  // Save expanded sections to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('expandedSections', JSON.stringify([...expandedSections]));
     } catch (error) {
-      console.error('Error saving expanded sections to localStorage:', error);
+      console.error('Error saving expanded sections:', error);
     }
   }, [expandedSections]);
 
@@ -188,25 +203,88 @@ const PracticeDashboard = () => {
     }
   };
 
+  const CodeModal = ({ code, onClose }) => {
+    useEffect(() => {
+      Prism.highlightAll();
+    }, [code]);
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-auto">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-black">Solution</h3>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="relative">
+            <pre className="!bg-gray-900 !p-4 rounded-lg overflow-x-auto">
+              <code className="language-python">{code}</code>
+            </pre>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const VideoModal = ({ videoId, onClose }) => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-4xl">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-black">Video Solution</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="relative" style={{ paddingBottom: '56.25%' }}>
+          <iframe
+            className="absolute inset-0 w-full h-full"
+            src={`https://www.youtube.com/embed/${videoId}`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {showCode && (
+        <CodeModal
+          code={selectedCode}
+          onClose={() => setShowCode(false)}
+        />
+      )}
+      {showVideo && (
+        <VideoModal
+          videoId={selectedVideo}
+          onClose={() => setShowVideo(false)}
+        />
+      )}
       <div className="max-w-5xl mx-auto p-6">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Blind 75</h1>
           <p className="text-gray-600">Acompanhe seu progresso na Blind 75</p>
         </div>
-        
+
         <div className="space-y-4">
           {Object.entries(categories).map(([category, problems]) => {
             const progress = calculateProgress(problems);
             const completedCount = problems.filter(p => completedProblems.has(p.id)).length;
-            
+
             return (
-              <Card 
-                key={category} 
+              <Card
+                key={category}
                 className="overflow-hidden border-0 shadow-sm transition-all duration-200 hover:shadow-md"
               >
-                <div 
+                <div
                   className="cursor-pointer transition-colors duration-200 hover:bg-gray-50"
                   onClick={() => toggleSection(category)}
                 >
@@ -220,7 +298,7 @@ const PracticeDashboard = () => {
                     <div className="flex items-center gap-6">
                       <div className="flex items-center gap-2">
                         <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
+                          <div
                             className="h-full bg-blue-500 transition-all duration-300 rounded-full"
                             style={{ width: `${progress}%` }}
                           />
@@ -229,8 +307,8 @@ const PracticeDashboard = () => {
                           {progress}%
                         </span>
                       </div>
-                      {expandedSections.has(category) ? 
-                        <ChevronUp className="h-5 w-5 text-gray-400" /> : 
+                      {expandedSections.has(category) ?
+                        <ChevronUp className="h-5 w-5 text-gray-400" /> :
                         <ChevronDown className="h-5 w-5 text-gray-400" />
                       }
                     </div>
@@ -243,27 +321,50 @@ const PracticeDashboard = () => {
                       {problems.map((problem) => (
                         <div
                           key={problem.id}
-                          className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
-                          onClick={() => toggleProblem(problem.id)}
+                          className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                         >
                           <div className="flex items-center gap-3">
-                            {completedProblems.has(problem.id) ? 
-                              <CheckCircle2 className="w-5 h-5 text-emerald-500 transition-colors duration-200" /> :
-                              <Circle className="w-5 h-5 text-gray-300 transition-colors duration-200" />
-                            }
+                            <div
+                              onClick={() => toggleProblem(problem.id)}
+                              className="cursor-pointer"
+                            >
+                              {completedProblems.has(problem.id) ?
+                                <CheckCircle2 className="w-5 h-5 text-emerald-500 transition-colors duration-200" /> :
+                                <Circle className="w-5 h-5 text-gray-300 transition-colors duration-200" />
+                              }
+                            </div>
                             <a
                               href={problem.link}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="font-medium text-gray-900 hover:text-blue-600 transition-colors duration-200"
-                              onClick={(e) => e.stopPropagation()}
                             >
                               {problem.name}
                             </a>
                           </div>
-                          <span className={`text-sm font-semibold px-3 py-1 rounded-full ${getDifficultyColor(problem.difficulty)} bg-opacity-10`}>
-                            {problem.difficulty}
-                          </span>
+                          <div className="flex items-center gap-4">
+                            <span className={`text-sm font-semibold px-3 py-1 rounded-full ${getDifficultyColor(problem.difficulty)} bg-opacity-10`}>
+                              {problem.difficulty}
+                            </span>
+                            {problem.video && (<button
+                              onClick={() => {
+                                setSelectedVideo(problem.video);
+                                setShowVideo(true);
+                              }}
+                              className="p-2 text-gray-500 hover:text-blue-600 transition-colors duration-200"
+                            >
+                              <Video className="w-5 h-5" />
+                            </button>)}
+                            {problem.solution && (<button
+                              onClick={() => {
+                                setSelectedCode(problem.solution);
+                                setShowCode(true);
+                              }}
+                              className="p-2 text-gray-500 hover:text-blue-600 transition-colors duration-200"
+                            >
+                              <Code className="w-5 h-5" />
+                            </button>)}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -276,6 +377,7 @@ const PracticeDashboard = () => {
       </div>
     </div>
   );
+
 };
 
 export default PracticeDashboard;
